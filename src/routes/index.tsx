@@ -122,9 +122,9 @@ function Index() {
 
 function Booking({ members }: { members: Member[] }) {
   const days = useMemo(() => Array.from({ length: 14 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() + i); return d; }), []);
-  const [service, setService] = useState(SERVICES[0].name);
+  const [service, setService] = useState(SERVICES[0]!.name);
   const [memberId, setMemberId] = useState<string>("");
-  const [date, setDate] = useState(toISODate(days[0]));
+  const [date, setDate] = useState(toISODate(days[0]!));
   const [time, setTime] = useState("");
   const [taken, setTaken] = useState<string[]>([]);
   const [name, setName] = useState("");
@@ -144,12 +144,12 @@ function Booking({ members }: { members: Member[] }) {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!memberId || !time) return toast.error("Please choose a barber and a time.");
-    if (name.trim().length < 1 || phone.trim().length < 5) return toast.error("Please enter your name and phone.");
+    if (!memberId || !time) { toast.error("Please choose a barber and a time."); return; }
+    if (name.trim().length < 1 || phone.trim().length < 5) { toast.error("Please enter your name and phone."); return; }
     setBusy(true);
     const { error } = await supabase.from("bookings").insert({ customer_name: name.trim(), phone: phone.trim(), service, member_id: memberId, booking_date: date, booking_time: time });
     setBusy(false);
-    if (error) return toast.error(error.code === "23505" ? "That slot was just taken — pick another." : "Could not book. Try again.");
+    if (error) { toast.error(error.code === "23505" ? "That slot was just taken — pick another." : "Could not book. Try again."); return; }
     toast.success(`Booked! See you ${date} at ${time}.`);
     setTaken((t) => [...t, time]); setTime(""); setName(""); setPhone("");
   }

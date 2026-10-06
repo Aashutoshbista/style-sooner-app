@@ -117,7 +117,7 @@ function Dashboard() {
     e.preventDefault();
     if (!newName.trim()) return;
     const { error } = await supabase.from("members").insert({ name: newName.trim(), role: newRole.trim() || "Barber" });
-    if (error) return toast.error("Could not add member");
+    if (error) { toast.error("Could not add member"); return; }
     toast.success("Member added"); setNewName(""); setNewRole("Barber"); load();
   }
   async function toggleMember(m: Member) { await supabase.from("members").update({ active: !m.active }).eq("id", m.id); load(); }
