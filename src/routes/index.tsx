@@ -1,8 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { SERVICES, TIME_SLOTS, toISODate } from "@/lib/salon";
+import { MEMBERS, SERVICES, TIME_SLOTS, toISODate } from "@/lib/salon";
 import hero from "@/assets/hero.jpg";
 
 export const Route = createFileRoute("/")({
@@ -19,14 +18,7 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-type Member = { id: string; name: string; role: string };
-
 function Index() {
-  const [members, setMembers] = useState<Member[]>([]);
-  useEffect(() => {
-    supabase.from("members").select("id,name,role").eq("active", true).order("created_at").then(({ data }) => setMembers(data ?? []));
-  }, []);
-
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
       <div className="mx-auto max-w-7xl px-5 lg:px-10">
@@ -43,10 +35,7 @@ function Index() {
             <a href="#team" className="hover:text-foreground">Barbers</a>
             <a href="#book" className="hover:text-foreground">Book</a>
           </nav>
-          <div className="flex gap-2">
-            <Link to="/admin" className="rounded-full border px-4 py-2 text-xs font-medium hover:bg-muted">Admin</Link>
-            <a href="#book" className="rounded-full bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90">Book now</a>
-          </div>
+          <a href="#book" className="rounded-full bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90">Book now</a>
         </header>
 
         <section className="grid items-center gap-12 py-10 lg:grid-cols-2 lg:py-16">
@@ -66,7 +55,7 @@ function Index() {
               <span className="h-8 w-px bg-border" />
               <span><span className="font-display text-2xl text-foreground">4.9</span> rating</span>
               <span className="h-8 w-px bg-border" />
-              <span><span className="font-display text-2xl text-foreground">{members.length || 3}</span> barbers</span>
+              <span><span className="font-display text-2xl text-foreground">{MEMBERS.length}</span> barbers</span>
             </div>
           </div>
           <div className="relative">
@@ -97,7 +86,7 @@ function Index() {
         <section id="team" className="border-t py-16">
           <h2 className="mb-8 font-display text-3xl font-light">Meet the barbers</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {members.map((m) => (
+            {MEMBERS.map((m) => (
               <div key={m.id} className="flex items-center gap-4 rounded-2xl border bg-card p-5">
                 <span className="grid size-12 place-items-center rounded-full bg-secondary font-display text-lg text-secondary-foreground">{m.name[0]}</span>
                 <div>
@@ -109,49 +98,36 @@ function Index() {
           </div>
         </section>
 
-        <Booking members={members} />
+        <Booking />
 
         <footer className="flex flex-col items-center justify-between gap-3 border-t py-8 text-xs text-muted-foreground md:flex-row">
           <p>© 2026 Sage &amp; Shears Hair Studio</p>
-          <Link to="/admin" className="hover:text-foreground">Staff login</Link>
+          <p>Open daily · 9:30 – 19:00</p>
         </footer>
       </div>
     </div>
   );
 }
 
-function Booking({ members }: { members: Member[] }) {
+function Booking() {
   const days = useMemo(() => Array.from({ length: 14 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() + i); return d; }), []);
   const [service, setService] = useState(SERVICES[0]!.name);
-  const [memberId, setMemberId] = useState<string>("");
+  const [memberId, setMemberId] = useState<string>(MEMBERS[0]!.id);
   const [date, setDate] = useState(toISODate(days[0]!));
   const [time, setTime] = useState("");
-  const [taken, setTaken] = useState<string[]>([]);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => { if (!memberId && members[0]) setMemberId(members[0].id); }, [members, memberId]);
-  useEffect(() => {
-    if (!memberId) return;
-    supabase.rpc("get_taken_slots", { _member: memberId, _date: date }).then(({ data }) => setTaken((data as string[] | null) ?? []));
-  }, [memberId, date]);
 
   const isToday = date === toISODate(new Date());
   const nowHM = new Date().toTimeString().slice(0, 5);
   const svc = SERVICES.find((s) => s.name === service)!;
-  const member = members.find((m) => m.id === memberId);
+  const member = MEMBERS.find((m) => m.id === memberId);
 
-  async function submit(e: React.FormEvent) {
+  function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!memberId || !time) { toast.error("Please choose a barber and a time."); return; }
     if (name.trim().length < 1 || phone.trim().length < 5) { toast.error("Please enter your name and phone."); return; }
-    setBusy(true);
-    const { error } = await supabase.from("bookings").insert({ customer_name: name.trim(), phone: phone.trim(), service, member_id: memberId, booking_date: date, booking_time: time });
-    setBusy(false);
-    if (error) { toast.error(error.code === "23505" ? "That slot was just taken — pick another." : "Could not book. Try again."); return; }
-    toast.success(`Booked! See you ${date} at ${time}.`);
-    setTaken((t) => [...t, time]); setTime(""); setName(""); setPhone("");
+    toast.info("Online booking isn't connected yet — please call the studio to confirm your slot.");
   }
 
   const chip = (active: boolean, disabled = false) =>
@@ -161,7 +137,7 @@ function Booking({ members }: { members: Member[] }) {
     <section id="book" className="border-t py-16">
       <div className="mb-8 flex items-end justify-between">
         <h2 className="font-display text-3xl font-light">Book your chair</h2>
-        <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Live availability</span>
+        <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Pick a slot</span>
       </div>
       <form onSubmit={submit} className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
         <div className="space-y-6 rounded-3xl border bg-card p-6">
@@ -174,7 +150,7 @@ function Booking({ members }: { members: Member[] }) {
           <div>
             <p className="mb-3 text-xs uppercase tracking-[0.2em] text-muted-foreground">Barber</p>
             <div className="flex flex-wrap gap-2">
-              {members.map((m) => <button type="button" key={m.id} onClick={() => { setMemberId(m.id); setTime(""); }} className={chip(memberId === m.id)}>{m.name}</button>)}
+              {MEMBERS.map((m) => <button type="button" key={m.id} onClick={() => { setMemberId(m.id); setTime(""); }} className={chip(memberId === m.id)}>{m.name}</button>)}
             </div>
           </div>
           <div>
@@ -196,7 +172,7 @@ function Booking({ members }: { members: Member[] }) {
             <p className="mb-3 text-xs uppercase tracking-[0.2em] text-muted-foreground">Time</p>
             <div className="flex flex-wrap gap-2">
               {TIME_SLOTS.map((t) => {
-                const disabled = taken.includes(t) || (isToday && t <= nowHM);
+                const disabled = isToday && t <= nowHM;
                 return <button type="button" key={t} disabled={disabled} onClick={() => setTime(t)} className={chip(time === t, disabled)}>{t}</button>;
               })}
             </div>
@@ -211,8 +187,8 @@ function Booking({ members }: { members: Member[] }) {
             <input value={name} onChange={(e) => setName(e.target.value)} maxLength={100} placeholder="Full name" className="rounded-xl border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary" />
             <input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} placeholder="Phone" className="rounded-xl border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary" />
           </div>
-          <button disabled={busy} className="mt-auto w-full rounded-xl bg-accent py-3 text-sm font-semibold text-accent-foreground shadow-soft hover:opacity-90 disabled:opacity-60 max-lg:mt-5">
-            {busy ? "Booking…" : "Confirm booking"}
+          <button className="mt-auto w-full rounded-xl bg-accent py-3 text-sm font-semibold text-accent-foreground shadow-soft hover:opacity-90 max-lg:mt-5">
+            Confirm booking
           </button>
         </div>
       </form>
