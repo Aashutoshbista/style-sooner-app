@@ -7,6 +7,12 @@ export const SERVICES = [
 
 export const TIME_SLOTS = ["09:30", "10:15", "11:00", "11:45", "13:30", "14:15", "15:00", "15:45", "16:30", "17:15", "18:00"];
 
+export const MEMBERS = [
+  { id: "mara", name: "Mara Vance", role: "Master barber" },
+  { id: "jonah", name: "Jonah Reyes", role: "Fade specialist" },
+  { id: "elena", name: "Elena Cho", role: "Stylist" },
+];
+
 export function toISODate(d: Date) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
