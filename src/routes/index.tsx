@@ -35,7 +35,10 @@ function Index() {
             <a href="#team" className="hover:text-foreground">Barbers</a>
             <a href="#book" className="hover:text-foreground">Book</a>
           </nav>
-          <a href="#book" className="rounded-full bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90">Book now</a>
+          <div className="flex items-center gap-4">
+            <a href="/admin" className="text-xs font-semibold text-muted-foreground hover:text-foreground">Admin</a>
+            <a href="#book" className="rounded-full bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90">Book now</a>
+          </div>
         </header>
 
         <section className="grid items-center gap-12 py-10 lg:grid-cols-2 lg:py-16">
