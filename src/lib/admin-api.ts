@@ -29,7 +29,7 @@ let bookings: Booking[] = [
 
 // TODO: connect to your auth
 export async function signIn(email: string, _password: string): Promise<User> {
-  return { email, name: email.split("@")[0] };
+  return { email, name: email.split("@")[0] ?? email };
 }
 export async function signUp(name: string, email: string, _password: string): Promise<User> {
   return { email, name };
